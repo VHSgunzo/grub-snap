@@ -4,6 +4,7 @@ After=systemd-modules-load.service
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/timeshift --check
 ExecStart=/usr/bin/grub-snap
 ExecReload=/bin/kill -HUP ${MAINPID}
 KillSignal=SIGTERM
