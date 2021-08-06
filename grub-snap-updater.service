@@ -1,0 +1,13 @@
+[Unit]
+Description=Updater for TimeShift BTRFS snapshots entry in GRUB menu
+After=systemd-modules-load.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/grub-snap
+ExecReload=/bin/kill -HUP ${MAINPID}
+KillSignal=SIGTERM
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,57 @@
+#!/bin/bash
+if [[ $(id -u) -ne 0 ]]; then
+    echo "You must run it as root" >&2
+    exit 1
+fi
+
+snap_path="/run/timeshift/backup/timeshift-btrfs/snapshots/"
+
+grub_snap_upd () {
+grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+check_snap () {
+snap=$(btrfs su li /|grep "snapshots"|cut -d"/" -f3)
+snap_num=$(echo "$snap"|sed '/^$/d'|wc -l)
+if ! [ "$snap_num" == "0" ]
+    then
+#         echo -en "Snapshots found!\n"
+        for i in $snap
+            do
+                autosnap=$(grep comments ${snap_path}${i}/info.json|grep -o autosnap)
+                if ! [ -z $autosnap ]
+                    then
+                        autosnap_snap="${autosnap_snap}${i}\n"
+                    else
+                        timeshift_snap="${timeshift_snap}${i}\n"
+                fi
+            done
+#         echo -en "Autosnap snapshots:\n$autosnap_snap\n"
+#         echo -en "TimeShift snapshots:\n$timeshift_snap"
+#     else
+#         echo -en "Snapshots not found!\n"
+#         exit 1
+fi
+}
+
+snap_compare () {
+while true
+    do  
+        check_snap
+        old_snap=$(echo -en "$timeshift_snap")
+        unset timeshift_snap autosnap_snap
+        sleep 2
+        check_snap
+        new_snap=$(echo -en "$timeshift_snap")
+        unset timeshift_snap autosnap_snap
+        if [[ "$old_snap" == "$new_snap" ]]
+            then
+                continue
+            else
+                echo -en "TimeShift snapshots has been changed!\n"
+                grub_snap_upd
+        fi
+    done
+}
+
+snap_compare
